@@ -559,224 +559,303 @@
     </div>
 
     <script>
-        let dubbings = JSON.parse(localStorage.getItem('dubbings')) || [];
+       let dubbings = JSON.parse(localStorage.getItem('dubbings')) || [];
+let selectedFiles = []; // Global array to store selected files from input or drag-and-drop
 
-        function openModal() {
-            document.getElementById('addModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
+function openModal() {
+    document.getElementById('addModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
 
-        function closeModal() {
-            document.getElementById('addModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
+function closeModal() {
+    document.getElementById('addModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    // Clear selected files and preview when closing the modal
+    selectedFiles = [];
+    document.getElementById('audioFiles').value = ''; // Clear file input
+    document.getElementById('previewContainer').style.display = 'none';
+    document.getElementById('previewContent').innerHTML = '';
+}
 
-        function openTermsModal() {
-            document.getElementById('termsModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
+function openTermsModal() {
+    document.getElementById('termsModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
 
-        function closeTermsModal() {
-            document.getElementById('termsModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
+function closeTermsModal() {
+    document.getElementById('termsModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
 
-        window.onclick = function(event) {
-            const addModal = document.getElementById('addModal');
-            const termsModal = document.getElementById('termsModal');
-            if (event.target == addModal) {
-                closeModal();
-            }
-            if (event.target == termsModal) {
-                closeTermsModal();
-            }
-        }
+window.onclick = function(event) {
+    const addModal = document.getElementById('addModal');
+    const termsModal = document.getElementById('termsModal');
+    if (event.target == addModal) {
+        closeModal();
+    }
+    if (event.target == termsModal) {
+        closeTermsModal();
+    }
+}
 
-        function handleFileSelection(input) {
-            const files = input.files;
-            const previewContainer = document.getElementById('previewContainer');
-            const previewContent = document.getElementById('previewContent');
-            
-            if (files.length > 0) {
-                previewContainer.style.display = 'block';
-                previewContent.innerHTML = '';
-                
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const audioDiv = document.createElement('div');
-                    audioDiv.style.marginBottom = '10px';
-                    audioDiv.style.padding = '10px';
-                    audioDiv.style.background = 'rgba(30, 144, 255, 0.1)';
-                    audioDiv.style.borderRadius = '8px';
-                    audioDiv.style.border = '1px solid rgba(30, 144, 255, 0.3)';
-                    
-                    const fileName = document.createElement('div');
-                    fileName.textContent = `🎵 ${file.name}`;
-                    fileName.style.color = '#00bfff';
-                    fileName.style.marginBottom = '8px';
-                    fileName.style.fontWeight = 'bold';
-                    
-                    const audio = document.createElement('audio');
-                    audio.controls = true;
-                    audio.style.width = '100%';
-                    audio.style.height = '35px';
-                    audio.src = URL.createObjectURL(file);
-                    
-                    audioDiv.appendChild(fileName);
-                    audioDiv.appendChild(audio);
-                    previewContent.appendChild(audioDiv);
-                }
-            } else {
-                previewContainer.style.display = 'none';
-            }
-        }
-
-        async function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
+/**
+ * Recursively reads entries from a directory or processes files.
+ * @param {FileSystemEntry[]} entries - Array of FileSystemEntry objects (files or directories).
+ * @returns {Promise<File[]>} A promise that resolves with an array of File objects.
+ */
+async function readEntries(entries) {
+    const files = [];
+    for (const entry of entries) {
+        if (entry.isFile) {
+            files.push(await new Promise(resolve => entry.file(resolve)));
+        } else if (entry.isDirectory) {
+            const reader = entry.createReader();
+            const directoryFiles = await new Promise(resolve => {
+                reader.readEntries(async dirEntries => {
+                    resolve(await readEntries(dirEntries));
+                });
             });
+            files.push(...directoryFiles);
         }
+    }
+    return files;
+}
 
-        async function submitDubbing(event) {
-            event.preventDefault();
-            
-            const title = document.getElementById('dubbingTitle').value;
-            const type = document.getElementById('dubbingType').value;
-            const description = document.getElementById('dubbingDescription').value;
-            const uploader = document.getElementById('uploaderName').value;
-            const image = document.getElementById('dubbingImage').value;
-            const audioFiles = document.getElementById('audioFiles').files;
-            
-            // Ses dosyalarını base64'e çevir
-            const audioData = [];
-            for (let i = 0; i < audioFiles.length; i++) {
-                const file = audioFiles[i];
-                try {
-                    const base64 = await fileToBase64(file);
-                    audioData.push({
-                        name: file.name,
-                        data: base64,
-                        type: file.type
-                    });
-                } catch (error) {
-                    console.error('Dosya dönüştürme hatası:', error);
-                }
+/**
+ * Handles file selection from input or drag-and-drop.
+ * @param {HTMLInputElement | DataTransfer} source - The input element or DataTransfer object.
+ */
+async function handleFileSelection(source) {
+    let filesToProcess = [];
+
+    if (source instanceof HTMLInputElement && source.files) {
+        // Standard file input
+        filesToProcess = Array.from(source.files);
+    } else if (source instanceof DataTransfer && source.items) {
+        // Drag and drop
+        const entries = [];
+        for (let i = 0; i < source.items.length; i++) {
+            const item = source.items[i];
+            const entry = item.webkitGetAsEntry(); // For folder support in Chrome
+            if (entry) {
+                entries.push(entry);
             }
-            
-            const newDubbing = {
-                id: Date.now(),
-                title: title,
-                type: type,
-                description: description,
-                uploader: uploader,
-                image: image,
-                audioFiles: audioData,
-                date: new Date().toLocaleDateString('tr-TR')
-            };
-            
-            dubbings.push(newDubbing);
-            localStorage.setItem('dubbings', JSON.stringify(dubbings));
-            
-            displayDubbings();
-            updateStats();
-            closeModal();
-            document.getElementById('dubbingForm').reset();
-            document.getElementById('previewContainer').style.display = 'none';
         }
+        filesToProcess = await readEntries(entries);
+    }
 
-        function displayDubbings(filteredDubbings = null) {
-            const dubbingsToShow = filteredDubbings || dubbings;
-            const dubbingList = document.getElementById('dubbingList');
-            dubbingList.innerHTML = '';
+    // Filter for audio/video files
+    const supportedFiles = filesToProcess.filter(file => 
+        file.type.startsWith('audio/') || file.type.startsWith('video/')
+    );
 
-            if (dubbingsToShow.length === 0) {
-                dubbingList.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">🎤</div>
-                        <h3>Henüz dublaj eklenmemiş</h3>
-                        <p>İlk dublajı sen ekle!</p>
-                    </div>
-                `;
-                return;
-            }
+    selectedFiles = supportedFiles; // Store them globally
 
-            dubbingsToShow.forEach(dubbing => {
-                const dubbingElement = document.createElement('div');
-                dubbingElement.className = 'dubbing-item';
-                
-                const typeText = {
-                    'game': '🎮 Oyun',
-                    'movie': '🎬 Film',
-                    'series': '📺 Dizi',
-                    'other': '📁 Diğer'
-                };
-                
-                dubbingElement.innerHTML = `
-                    <div class="dubbing-header">
-                        <div class="dubbing-title">${dubbing.title}</div>
-                        <div class="dubbing-type">${typeText[dubbing.type] || dubbing.type}</div>
-                    </div>
-                    <div class="dubbing-description">${dubbing.description}</div>
-                    ${dubbing.image ? 
-                        `<img src="${dubbing.image}" alt="${dubbing.title}" class="dubbing-image" onerror="this.style.display='none'">` : 
-                        '<div class="no-image">🖼️ Resim Yok</div>'
-                    }
-                    ${dubbing.audioFiles && dubbing.audioFiles.length > 0 ? 
-                        dubbing.audioFiles.map(audioFile => `
-                            <div class="audio-player">
-                                <div style="color: #00bfff; margin-bottom: 5px; font-weight: bold;">🎵 ${audioFile.name}</div>
-                                <audio controls>
-                                    <source src="${audioFile.data}" type="${audioFile.type}">
-                                    Tarayıcınız ses dosyasını desteklemiyor.
-                                </audio>
-                            </div>
-                        `).join('') : 
-                        '<div style="color: #888; text-align: center; padding: 20px;">🔇 Ses dosyası yok</div>'
-                    }
-                    <div class="uploader-info">👤 ${dubbing.uploader} • 📅 ${dubbing.date}</div>
-                `;
-                
-                dubbingList.appendChild(dubbingElement);
-            });
-        }
+    const previewContainer = document.getElementById('previewContainer');
+    const previewContent = document.getElementById('previewContent');
 
-        function searchDubbings(query) {
-            if (!query.trim()) {
-                displayDubbings();
-                return;
-            }
-            
-            const filtered = dubbings.filter(dubbing => 
-                dubbing.title.toLowerCase().includes(query.toLowerCase()) ||
-                dubbing.description.toLowerCase().includes(query.toLowerCase()) ||
-                dubbing.uploader.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            displayDubbings(filtered);
-        }
+    if (selectedFiles.length > 0) {
+        previewContainer.style.display = 'block';
+        previewContent.innerHTML = ''; // Clear previous previews
 
-        function updateStats() {
-            document.getElementById('totalDubbings').textContent = dubbings.length;
-            document.getElementById('gameDubbings').textContent = dubbings.filter(d => d.type === 'game').length;
-            document.getElementById('movieDubbings').textContent = dubbings.filter(d => d.type === 'movie').length;
-        }
+        selectedFiles.forEach(file => {
+            const fileDiv = document.createElement('div');
+            fileDiv.style.marginBottom = '10px';
+            fileDiv.style.padding = '10px';
+            fileDiv.style.background = 'rgba(30, 144, 255, 0.1)';
+            fileDiv.style.borderRadius = '8px';
+            fileDiv.style.border = '1px solid rgba(30, 144, 255, 0.3)';
 
-        // Sayfa yüklendiğinde
-        window.onload = function() {
-            displayDubbings();
-            updateStats();
-        };
-        
-        // Klavye kısayolları
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal();
-                closeTermsModal();
-            }
+            const fileName = document.createElement('div');
+            fileName.textContent = `🎵 ${file.name}`;
+            fileName.style.color = '#00bfff';
+            fileName.style.marginBottom = '8px';
+            fileName.style.fontWeight = 'bold';
+
+            const mediaElement = document.createElement(file.type.startsWith('audio/') ? 'audio' : 'video');
+            mediaElement.controls = true;
+            mediaElement.style.width = '100%';
+            mediaElement.style.height = file.type.startsWith('audio/') ? '35px' : '150px'; // Different height for video
+            mediaElement.src = URL.createObjectURL(file);
+
+            fileDiv.appendChild(fileName);
+            fileDiv.appendChild(mediaElement);
+            previewContent.appendChild(fileDiv);
         });
+    } else {
+        previewContainer.style.display = 'none';
+    }
+}
+
+async function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
+async function submitDubbing(event) {
+    event.preventDefault();
+
+    const title = document.getElementById('dubbingTitle').value;
+    const type = document.getElementById('dubbingType').value;
+    const description = document.getElementById('dubbingDescription').value;
+    const uploader = document.getElementById('uploaderName').value;
+    const image = document.getElementById('dubbingImage').value; // Still URL for image
+
+    const audioVideoData = [];
+    for (const file of selectedFiles) { // Use the global selectedFiles array
+        try {
+            const base64 = await fileToBase64(file);
+            audioVideoData.push({
+                name: file.name,
+                data: base64,
+                type: file.type
+            });
+        } catch (error) {
+            console.error('File conversion error:', error);
+        }
+    }
+
+    const newDubbing = {
+        id: Date.now(),
+        title: title,
+        type: type,
+        description: description,
+        uploader: uploader,
+        image: image,
+        audioFiles: audioVideoData, // Now includes video files too
+        date: new Date().toLocaleDateString('tr-TR')
+    };
+
+    dubbings.push(newDubbing);
+    localStorage.setItem('dubbings', JSON.stringify(dubbings));
+
+    displayDubbings();
+    updateStats();
+    closeModal();
+    document.getElementById('dubbingForm').reset();
+    selectedFiles = []; // Clear selected files after submission
+    document.getElementById('previewContainer').style.display = 'none';
+}
+
+function displayDubbings(filteredDubbings = null) {
+    const dubbingsToShow = filteredDubbings || dubbings;
+    const dubbingList = document.getElementById('dubbingList');
+    dubbingList.innerHTML = '';
+
+    if (dubbingsToShow.length === 0) {
+        dubbingList.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">🎤</div>
+                <h3>Henüz dublaj eklenmemiş</h3>
+                <p>İlk dublajı sen ekle!</p>
+            </div>
+        `;
+        return;
+    }
+
+    dubbingsToShow.forEach(dubbing => {
+        const dubbingElement = document.createElement('div');
+        dubbingElement.className = 'dubbing-item';
+
+        const typeText = {
+            'game': '🎮 Oyun',
+            'movie': '🎬 Film',
+            'series': '📺 Dizi',
+            'other': '📁 Diğer'
+        };
+
+        dubbingElement.innerHTML = `
+            <div class="dubbing-header">
+                <div class="dubbing-title">${dubbing.title}</div>
+                <div class="dubbing-type">${typeText[dubbing.type] || dubbing.type}</div>
+            </div>
+            <div class="dubbing-description">${dubbing.description}</div>
+            ${dubbing.image ? 
+                `<img src="${dubbing.image}" alt="${dubbing.title}" class="dubbing-image" onerror="this.style.display='none'">` : 
+                '<div class="no-image">🖼️ Resim Yok</div>'
+            }
+            ${dubbing.audioFiles && dubbing.audioFiles.length > 0 ? 
+                dubbing.audioFiles.map(mediaFile => `
+                    <div class="media-player">
+                        <div style="color: #00bfff; margin-bottom: 5px; font-weight: bold;">
+                            ${mediaFile.type.startsWith('audio/') ? '🎵' : '🎞️'} ${mediaFile.name}
+                        </div>
+                        <${mediaFile.type.startsWith('audio/') ? 'audio' : 'video'} controls style="width: 100%; ${mediaFile.type.startsWith('video/') ? 'max-height: 200px;' : ''}">
+                            <source src="${mediaFile.data}" type="${mediaFile.type}">
+                            Tarayıcınız bu medya dosyasını desteklemiyor.
+                        </${mediaFile.type.startsWith('audio/') ? 'audio' : 'video'}>
+                    </div>
+                `).join('') : 
+                '<div style="color: #888; text-align: center; padding: 20px;">🔇 Medya dosyası yok</div>'
+            }
+            <div class="uploader-info">👤 ${dubbing.uploader} • 📅 ${dubbing.date}</div>
+        `;
+
+        dubbingList.appendChild(dubbingElement);
+    });
+}
+
+function searchDubbings(query) {
+    if (!query.trim()) {
+        displayDubbings();
+        return;
+    }
+
+    const filtered = dubbings.filter(dubbing => 
+        dubbing.title.toLowerCase().includes(query.toLowerCase()) ||
+        dubbing.description.toLowerCase().includes(query.toLowerCase()) ||
+        dubbing.uploader.toLowerCase().includes(query.toLowerCase())
+    );
+
+    displayDubbings(filtered);
+}
+
+function updateStats() {
+    document.getElementById('totalDubbings').textContent = dubbings.length;
+    document.getElementById('gameDubbings').textContent = dubbings.filter(d => d.type === 'game').length;
+    document.getElementById('movieDubbings').textContent = dubbings.filter(d => d.type === 'movie').length;
+}
+
+// Sayfa yüklendiğinde
+window.onload = function() {
+    displayDubbings();
+    updateStats();
+
+    // Setup Drag and Drop
+    const dropZone = document.getElementById('dropZone'); // You'll need to add this to your HTML
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('drag-over');
+            handleFileSelection(e.dataTransfer);
+        });
+    }
+};
+
+// Klavye kısayolları
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+        closeTermsModal();
+    }
+});
 </script>
 </body>
 </html>
