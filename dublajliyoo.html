@@ -769,8 +769,14 @@
             displayDubbings();
             updateStats();
         };
-
+        
         // Klavye kısayolları
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                close
+                closeModal();
+                closeTermsModal();
+            }
+        });
+</script>
+</body>
+</html>
