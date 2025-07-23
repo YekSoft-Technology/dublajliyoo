@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dublajlıyoo - Dublaj Paylaşım Platformu</title>
+    <title>Dublajlıyoo</title>
     <style>
         * {
             margin: 0;
@@ -219,16 +219,30 @@
             margin-bottom: 15px;
         }
 
-        .audio-player {
+        .download-link {
+            display: block;
             margin: 10px 0;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #1e90ff, #00bfff);
+            color: white;
+            text-decoration: none;
             border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(30, 144, 255, 0.3);
         }
 
-        .audio-player audio {
-            width: 100%;
-            height: 40px;
+        .download-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 144, 255, 0.4);
+        }
+
+        .link-info {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+            word-break: break-all;
         }
 
         .uploader-info {
@@ -349,37 +363,6 @@
             box-shadow: 0 0 15px rgba(30, 144, 255, 0.3);
         }
 
-        .file-input-container {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-input-btn {
-            background: linear-gradient(45deg, #1e90ff, #00bfff);
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-            transition: all 0.3s;
-        }
-
-        .file-input-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(30, 144, 255, 0.3);
-        }
-
-        .file-input {
-            position: absolute;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
         .submit-btn {
             background: linear-gradient(45deg, #ff4444, #ff6666);
             color: white;
@@ -399,20 +382,6 @@
             box-shadow: 0 8px 25px rgba(255, 68, 68, 0.4);
         }
 
-        .preview-container {
-            margin-top: 15px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            display: none;
-        }
-
-        .preview-title {
-            color: #00bfff;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -423,6 +392,88 @@
             font-size: 4em;
             margin-bottom: 20px;
             opacity: 0.5;
+        }
+
+        .supported-platforms {
+            background: rgba(30, 144, 255, 0.1);
+            border: 2px solid rgba(30, 144, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .supported-platforms h4 {
+            color: #00bfff;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .platform-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .platform-item {
+            background: rgba(30, 144, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            color: #ffffff;
+        }
+
+        .error-message {
+            background: rgba(255, 68, 68, 0.1);
+            border: 2px solid #ff4444;
+            color: #ff4444;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .add-link-btn {
+            background: linear-gradient(45deg, #00bfff, #1e90ff);
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .add-link-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(30, 144, 255, 0.3);
+        }
+
+        .link-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .remove-link-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .remove-link-btn:hover {
+            background: #ff6666;
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -510,14 +561,23 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="audioFiles">🎵 Ses Dosyaları:</label>
-                    <div class="file-input-container">
-                        <button type="button" class="file-input-btn">Ses Dosyalarını Seç</button>
-                        <input type="file" id="audioFiles" class="file-input" multiple accept="audio/*" onchange="handleFileSelection(this)">
+                    <label>🔗 İndirme Linkleri:</label>
+                    <div id="linkContainer">
+                        <div class="link-input-group">
+                            <input type="url" class="link-input" placeholder="https://gofile.io/d/example" style="flex: 1;">
+                            <button type="button" class="remove-link-btn" onclick="removeLinkInput(this)" style="display: none;">×</button>
+                        </div>
                     </div>
-                    <div id="previewContainer" class="preview-container">
-                        <div class="preview-title">Önizleme:</div>
-                        <div id="previewContent"></div>
+                    <button type="button" class="add-link-btn" onclick="addLinkInput()">+ Başka Link Ekle</button>
+                    <div id="linkError" class="error-message" style="display: none;"></div>
+                    
+                    <div class="supported-platforms">
+                        <h4>📌 Desteklenen Platformlar:</h4>
+                        <div class="platform-list">
+                            <span class="platform-item">🗂️ gofile.io</span>
+                            <span class="platform-item">📁 dosyaupload.com</span>
+                            <span class="platform-item">💾 mediafire.com</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -548,6 +608,7 @@
                     <li style="margin-bottom: 8px;"><span style="color: #00bfff;">📝</span> Açıklamalarda doğru bilgiler verin</li>
                     <li style="margin-bottom: 8px;"><span style="color: #00bfff;">🎧</span> Ses kalitesine özen gösterin</li>
                     <li style="margin-bottom: 8px;"><span style="color: #00bfff;">🤝</span> Diğer kullanıcılara saygılı olun</li>
+                    <li style="margin-bottom: 8px;"><span style="color: #00bfff;">🔗</span> Sadece desteklenen platformlardan link paylaşın</li>
                 </ul>
                 
                 <div style="background: rgba(255, 68, 68, 0.1); padding: 20px; border-radius: 10px; margin-top: 25px; border-left: 4px solid #ff4444;">
@@ -559,303 +620,288 @@
     </div>
 
     <script>
-       let dubbings = JSON.parse(localStorage.getItem('dubbings')) || [];
-let selectedFiles = []; // Global array to store selected files from input or drag-and-drop
+        let dubbings = JSON.parse(localStorage.getItem('dubbings')) || [];
+        const supportedPlatforms = ['gofile.io', 'dosyaupload.com', 'mediafire.com'];
 
-function openModal() {
-    document.getElementById('addModal').style.display = 'block';
-    document.body.style.overflow = 'hidden';
-}
-
-function closeModal() {
-    document.getElementById('addModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
-    // Clear selected files and preview when closing the modal
-    selectedFiles = [];
-    document.getElementById('audioFiles').value = ''; // Clear file input
-    document.getElementById('previewContainer').style.display = 'none';
-    document.getElementById('previewContent').innerHTML = '';
-}
-
-function openTermsModal() {
-    document.getElementById('termsModal').style.display = 'block';
-    document.body.style.overflow = 'hidden';
-}
-
-function closeTermsModal() {
-    document.getElementById('termsModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
-}
-
-window.onclick = function(event) {
-    const addModal = document.getElementById('addModal');
-    const termsModal = document.getElementById('termsModal');
-    if (event.target == addModal) {
-        closeModal();
-    }
-    if (event.target == termsModal) {
-        closeTermsModal();
-    }
-}
-
-/**
- * Recursively reads entries from a directory or processes files.
- * @param {FileSystemEntry[]} entries - Array of FileSystemEntry objects (files or directories).
- * @returns {Promise<File[]>} A promise that resolves with an array of File objects.
- */
-async function readEntries(entries) {
-    const files = [];
-    for (const entry of entries) {
-        if (entry.isFile) {
-            files.push(await new Promise(resolve => entry.file(resolve)));
-        } else if (entry.isDirectory) {
-            const reader = entry.createReader();
-            const directoryFiles = await new Promise(resolve => {
-                reader.readEntries(async dirEntries => {
-                    resolve(await readEntries(dirEntries));
-                });
-            });
-            files.push(...directoryFiles);
+        function openModal() {
+            document.getElementById('addModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
         }
-    }
-    return files;
-}
 
-/**
- * Handles file selection from input or drag-and-drop.
- * @param {HTMLInputElement | DataTransfer} source - The input element or DataTransfer object.
- */
-async function handleFileSelection(source) {
-    let filesToProcess = [];
+        function closeModal() {
+            document.getElementById('addModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            document.getElementById('dubbingForm').reset();
+            resetLinkInputs();
+        }
 
-    if (source instanceof HTMLInputElement && source.files) {
-        // Standard file input
-        filesToProcess = Array.from(source.files);
-    } else if (source instanceof DataTransfer && source.items) {
-        // Drag and drop
-        const entries = [];
-        for (let i = 0; i < source.items.length; i++) {
-            const item = source.items[i];
-            const entry = item.webkitGetAsEntry(); // For folder support in Chrome
-            if (entry) {
-                entries.push(entry);
+        function openTermsModal() {
+            document.getElementById('termsModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTermsModal() {
+            document.getElementById('termsModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        window.onclick = function(event) {
+            const addModal = document.getElementById('addModal');
+            const termsModal = document.getElementById('termsModal');
+            if (event.target == addModal) {
+                closeModal();
+            }
+            if (event.target == termsModal) {
+                closeTermsModal();
             }
         }
-        filesToProcess = await readEntries(entries);
-    }
 
-    // Filter for audio/video files
-    const supportedFiles = filesToProcess.filter(file => 
-        file.type.startsWith('audio/') || file.type.startsWith('video/')
-    );
-
-    selectedFiles = supportedFiles; // Store them globally
-
-    const previewContainer = document.getElementById('previewContainer');
-    const previewContent = document.getElementById('previewContent');
-
-    if (selectedFiles.length > 0) {
-        previewContainer.style.display = 'block';
-        previewContent.innerHTML = ''; // Clear previous previews
-
-        selectedFiles.forEach(file => {
-            const fileDiv = document.createElement('div');
-            fileDiv.style.marginBottom = '10px';
-            fileDiv.style.padding = '10px';
-            fileDiv.style.background = 'rgba(30, 144, 255, 0.1)';
-            fileDiv.style.borderRadius = '8px';
-            fileDiv.style.border = '1px solid rgba(30, 144, 255, 0.3)';
-
-            const fileName = document.createElement('div');
-            fileName.textContent = `🎵 ${file.name}`;
-            fileName.style.color = '#00bfff';
-            fileName.style.marginBottom = '8px';
-            fileName.style.fontWeight = 'bold';
-
-            const mediaElement = document.createElement(file.type.startsWith('audio/') ? 'audio' : 'video');
-            mediaElement.controls = true;
-            mediaElement.style.width = '100%';
-            mediaElement.style.height = file.type.startsWith('audio/') ? '35px' : '150px'; // Different height for video
-            mediaElement.src = URL.createObjectURL(file);
-
-            fileDiv.appendChild(fileName);
-            fileDiv.appendChild(mediaElement);
-            previewContent.appendChild(fileDiv);
-        });
-    } else {
-        previewContainer.style.display = 'none';
-    }
-}
-
-async function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
-}
-
-async function submitDubbing(event) {
-    event.preventDefault();
-
-    const title = document.getElementById('dubbingTitle').value;
-    const type = document.getElementById('dubbingType').value;
-    const description = document.getElementById('dubbingDescription').value;
-    const uploader = document.getElementById('uploaderName').value;
-    const image = document.getElementById('dubbingImage').value; // Still URL for image
-
-    const audioVideoData = [];
-    for (const file of selectedFiles) { // Use the global selectedFiles array
-        try {
-            const base64 = await fileToBase64(file);
-            audioVideoData.push({
-                name: file.name,
-                data: base64,
-                type: file.type
-            });
-        } catch (error) {
-            console.error('File conversion error:', error);
-        }
-    }
-
-    const newDubbing = {
-        id: Date.now(),
-        title: title,
-        type: type,
-        description: description,
-        uploader: uploader,
-        image: image,
-        audioFiles: audioVideoData, // Now includes video files too
-        date: new Date().toLocaleDateString('tr-TR')
-    };
-
-    dubbings.push(newDubbing);
-    localStorage.setItem('dubbings', JSON.stringify(dubbings));
-
-    displayDubbings();
-    updateStats();
-    closeModal();
-    document.getElementById('dubbingForm').reset();
-    selectedFiles = []; // Clear selected files after submission
-    document.getElementById('previewContainer').style.display = 'none';
-}
-
-function displayDubbings(filteredDubbings = null) {
-    const dubbingsToShow = filteredDubbings || dubbings;
-    const dubbingList = document.getElementById('dubbingList');
-    dubbingList.innerHTML = '';
-
-    if (dubbingsToShow.length === 0) {
-        dubbingList.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">🎤</div>
-                <h3>Henüz dublaj eklenmemiş</h3>
-                <p>İlk dublajı sen ekle!</p>
-            </div>
-        `;
-        return;
-    }
-
-    dubbingsToShow.forEach(dubbing => {
-        const dubbingElement = document.createElement('div');
-        dubbingElement.className = 'dubbing-item';
-
-        const typeText = {
-            'game': '🎮 Oyun',
-            'movie': '🎬 Film',
-            'series': '📺 Dizi',
-            'other': '📁 Diğer'
-        };
-
-        dubbingElement.innerHTML = `
-            <div class="dubbing-header">
-                <div class="dubbing-title">${dubbing.title}</div>
-                <div class="dubbing-type">${typeText[dubbing.type] || dubbing.type}</div>
-            </div>
-            <div class="dubbing-description">${dubbing.description}</div>
-            ${dubbing.image ? 
-                `<img src="${dubbing.image}" alt="${dubbing.title}" class="dubbing-image" onerror="this.style.display='none'">` : 
-                '<div class="no-image">🖼️ Resim Yok</div>'
+        function validateLink(url) {
+            if (!url) return { valid: false, error: 'Link boş olamaz' };
+            
+            try {
+                const urlObj = new URL(url);
+                const hostname = urlObj.hostname.toLowerCase();
+                
+                const isSupported = supportedPlatforms.some(platform => 
+                    hostname.includes(platform) || hostname.includes(platform.replace('.', ''))
+                );
+                
+                if (!isSupported) {
+                    return { 
+                        valid: false, 
+                        error: `Bu platform desteklenmiyor. Desteklenen platformlar: ${supportedPlatforms.join(', ')}` 
+                    };
+                }
+                
+                return { valid: true };
+            } catch (e) {
+                return { valid: false, error: 'Geçersiz URL formatı' };
             }
-            ${dubbing.audioFiles && dubbing.audioFiles.length > 0 ? 
-                dubbing.audioFiles.map(mediaFile => `
-                    <div class="media-player">
-                        <div style="color: #00bfff; margin-bottom: 5px; font-weight: bold;">
-                            ${mediaFile.type.startsWith('audio/') ? '🎵' : '🎞️'} ${mediaFile.name}
-                        </div>
-                        <${mediaFile.type.startsWith('audio/') ? 'audio' : 'video'} controls style="width: 100%; ${mediaFile.type.startsWith('video/') ? 'max-height: 200px;' : ''}">
-                            <source src="${mediaFile.data}" type="${mediaFile.type}">
-                            Tarayıcınız bu medya dosyasını desteklemiyor.
-                        </${mediaFile.type.startsWith('audio/') ? 'audio' : 'video'}>
+        }
+
+        function addLinkInput() {
+            const container = document.getElementById('linkContainer');
+            const linkCount = container.children.length;
+            
+            if (linkCount >= 2) {
+                showError('En fazla 2 link ekleyebilirsiniz');
+                return;
+            }
+            
+            const newLinkGroup = document.createElement('div');
+            newLinkGroup.className = 'link-input-group';
+            newLinkGroup.innerHTML = `
+                <input type="url" class="link-input" placeholder="https://gofile.io/d/example" style="flex: 1;">
+                <button type="button" class="remove-link-btn" onclick="removeLinkInput(this)">×</button>
+            `;
+            
+            container.appendChild(newLinkGroup);
+            updateRemoveButtons();
+        }
+
+        function removeLinkInput(button) {
+            const container = document.getElementById('linkContainer');
+            if (container.children.length > 1) {
+                button.parentElement.remove();
+            }
+            updateRemoveButtons();
+            hideError();
+        }
+
+        function updateRemoveButtons() {
+            const container = document.getElementById('linkContainer');
+            const removeButtons = container.querySelectorAll('.remove-link-btn');
+            
+            removeButtons.forEach(btn => {
+                btn.style.display = container.children.length > 1 ? 'flex' : 'none';
+            });
+        }
+
+        function resetLinkInputs() {
+            const container = document.getElementById('linkContainer');
+            container.innerHTML = `
+                <div class="link-input-group">
+                    <input type="url" class="link-input" placeholder="https://gofile.io/d/example" style="flex: 1;">
+                    <button type="button" class="remove-link-btn" onclick="removeLinkInput(this)" style="display: none;">×</button>
+                </div>
+            `;
+            hideError();
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('linkError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('linkError').style.display = 'none';
+        }
+
+        function submitDubbing(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('dubbingTitle').value;
+            const type = document.getElementById('dubbingType').value;
+            const description = document.getElementById('dubbingDescription').value;
+            const uploader = document.getElementById('uploaderName').value;
+            const image = document.getElementById('dubbingImage').value;
+            
+            const linkInputs = document.querySelectorAll('.link-input');
+            const downloadLinks = [];
+            let hasError = false;
+
+            linkInputs.forEach(input => {
+                const url = input.value.trim();
+                if (url) {
+                    const validation = validateLink(url);
+                    if (validation.valid) {
+                        downloadLinks.push({
+                            url: url,
+                            platform: getPlatformName(url)
+                        });
+                    } else {
+                        showError(validation.error);
+                        hasError = true;
+                    }
+                }
+            });
+
+            if (hasError) return;
+
+            if (downloadLinks.length === 0) {
+                showError('En az bir indirme linki ekleyin');
+                return;
+            }
+
+            const newDubbing = {
+                id: Date.now(),
+                title: title,
+                type: type,
+                description: description,
+                uploader: uploader,image: image,
+                downloadLinks: downloadLinks,
+                uploadDate: new Date().toLocaleDateString('tr-TR')
+            };
+
+            dubbings.push(newDubbing);
+            localStorage.setItem('dubbings', JSON.stringify(dubbings));
+            
+            displayDubbings();
+            updateStats();
+            closeModal();
+            
+            // Başarı mesajı göster
+            alert('Dublaj başarıyla eklendi! 🎉');
+        }
+
+        function getPlatformName(url) {
+            try {
+                const hostname = new URL(url).hostname.toLowerCase();
+                if (hostname.includes('gofile')) return 'GoFile';
+                if (hostname.includes('dosyaupload')) return 'DosyaUpload';
+                if (hostname.includes('mediafire')) return 'MediaFire';
+                return 'Bilinmeyen Platform';
+            } catch (e) {
+                return 'Bilinmeyen Platform';
+            }
+        }
+
+        function displayDubbings(dubbingsToShow = dubbings) {
+            const dubbingList = document.getElementById('dubbingList');
+            
+            if (dubbingsToShow.length === 0) {
+                dubbingList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🎤</div>
+                        <h3>Henüz dublaj eklenmemiş</h3>
+                        <p>İlk dublajı sen ekle!</p>
                     </div>
-                `).join('') : 
-                '<div style="color: #888; text-align: center; padding: 20px;">🔇 Medya dosyası yok</div>'
+                `;
+                return;
             }
-            <div class="uploader-info">👤 ${dubbing.uploader} • 📅 ${dubbing.date}</div>
-        `;
 
-        dubbingList.appendChild(dubbingElement);
-    });
-}
+            dubbingList.innerHTML = dubbingsToShow.map(dubbing => `
+                <div class="dubbing-item">
+                    <div class="dubbing-header">
+                        <div class="dubbing-title">${dubbing.title}</div>
+                        <div class="dubbing-type">${getTypeText(dubbing.type)}</div>
+                    </div>
+                    
+                    ${dubbing.image ? 
+                        `<img src="${dubbing.image}" alt="${dubbing.title}" class="dubbing-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                         <div class="no-image" style="display: none;">🖼️ Resim yüklenemedi</div>` : 
+                        `<div class="no-image">🖼️ Resim eklenmemiş</div>`
+                    }
+                    
+                    <div class="dubbing-description">${dubbing.description}</div>
+                    
+                    <div class="download-links">
+                        ${dubbing.downloadLinks.map(link => `
+                            <a href="${link.url}" target="_blank" class="download-link">
+                                📥 ${link.platform} - İndir
+                            </a>
+                            <div class="link-info">${link.url}</div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="uploader-info">
+                        👤 Yükleyen: ${dubbing.uploader} | 📅 ${dubbing.uploadDate}
+                    </div>
+                </div>
+            `).join('');
+        }
 
-function searchDubbings(query) {
-    if (!query.trim()) {
-        displayDubbings();
-        return;
-    }
+        function getTypeText(type) {
+            const types = {
+                'game': '🎮 Oyun Dublajı',
+                'movie': '🎬 Film Dublajı',
+                'series': '📺 Dizi Dublajı',
+                'other': '📁 Diğer'
+            };
+            return types[type] || '📁 Diğer';
+        }
 
-    const filtered = dubbings.filter(dubbing => 
-        dubbing.title.toLowerCase().includes(query.toLowerCase()) ||
-        dubbing.description.toLowerCase().includes(query.toLowerCase()) ||
-        dubbing.uploader.toLowerCase().includes(query.toLowerCase())
-    );
+        function updateStats() {
+            const totalDubbings = dubbings.length;
+            const gameDubbings = dubbings.filter(d => d.type === 'game').length;
+            const movieDubbings = dubbings.filter(d => d.type === 'movie').length;
 
-    displayDubbings(filtered);
-}
+            document.getElementById('totalDubbings').textContent = totalDubbings;
+            document.getElementById('gameDubbings').textContent = gameDubbings;
+            document.getElementById('movieDubbings').textContent = movieDubbings;
+        }
 
-function updateStats() {
-    document.getElementById('totalDubbings').textContent = dubbings.length;
-    document.getElementById('gameDubbings').textContent = dubbings.filter(d => d.type === 'game').length;
-    document.getElementById('movieDubbings').textContent = dubbings.filter(d => d.type === 'movie').length;
-}
+        function searchDubbings(searchTerm) {
+            if (!searchTerm.trim()) {
+                displayDubbings();
+                return;
+            }
 
-// Sayfa yüklendiğinde
-window.onload = function() {
-    displayDubbings();
-    updateStats();
+            const filteredDubbings = dubbings.filter(dubbing => 
+                dubbing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                dubbing.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                dubbing.uploader.toLowerCase().includes(searchTerm.toLowerCase())
+            );
 
-    // Setup Drag and Drop
-    const dropZone = document.getElementById('dropZone'); // You'll need to add this to your HTML
-    if (dropZone) {
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            dropZone.classList.add('drag-over');
+            displayDubbings(filteredDubbings);
+        }
+
+        // Sayfa yüklendiğinde dubllajları göster
+        document.addEventListener('DOMContentLoaded', function() {
+            displayDubbings();
+            updateStats();
+            updateRemoveButtons();
         });
 
-        dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            dropZone.classList.remove('drag-over');
+        // ESC tuşu ile modal kapatma
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+                closeTermsModal();
+            }
         });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            dropZone.classList.remove('drag-over');
-            handleFileSelection(e.dataTransfer);
-        });
-    }
-};
-
-// Klavye kısayolları
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeModal();
-        closeTermsModal();
-    }
-});
-</script>
+    </script>
 </body>
 </html>
