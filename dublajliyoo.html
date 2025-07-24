@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dublajlıyoo</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <style>
         * {
             margin: 0;
@@ -483,12 +485,12 @@
             <div class="headphone-icon">🎧</div>
             <div>Dublajlıyoo</div>
         </div>
-        
+
         <div class="search-container">
             <input type="text" class="search-bar" placeholder="Dublaj ara..." onkeyup="searchDubbings(this.value)">
             <div class="search-icon">🔍</div>
         </div>
-        
+
         <button class="add-dubbing-btn" onclick="openModal()">Dublaj Ekle</button>
     </nav>
 
@@ -511,29 +513,28 @@
         <div class="dubbing-list" id="dubbingList">
             <div class="empty-state">
                 <div class="icon">🎤</div>
-                <h3>Henüz dublaj eklenmemiş</h3>
-                <p>İlk dublajı sen ekle!</p>
+                <h3>Dublajlar yükleniyor...</h3>
+                <p>Lütfen bekleyin.</p>
             </div>
         </div>
     </div>
 
-    <!-- Dublaj Ekleme Modal -->
     <div id="addModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h2>🎬 Yeni Dublaj Ekle</h2>
-            
+
             <div class="legal-notice">
                 <div class="legal-title">Türkiye Cumhuriyeti Kanunlarına Göre Ses Ekleyin</div>
                 <div><span class="terms-link" onclick="openTermsModal()">Kullanım Şartları</span></div>
             </div>
-            
+
             <form id="dubbingForm" onsubmit="submitDubbing(event)">
                 <div class="form-group">
                     <label for="dubbingTitle">🎯 Başlık:</label>
                     <input type="text" id="dubbingTitle" required placeholder="Dublaj başlığını girin...">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="dubbingType">📂 Tür:</label>
                     <select id="dubbingType" required>
@@ -544,22 +545,22 @@
                         <option value="other">📁 Diğer</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="dubbingDescription">📝 Açıklama:</label>
                     <textarea id="dubbingDescription" rows="4" required placeholder="Dublaj hakkında detay verin..."></textarea>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="uploaderName">👤 Yükleyen:</label>
                     <input type="text" id="uploaderName" required placeholder="Adınızı girin...">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="dubbingImage">🖼️ Resim URL (İsteğe bağlı):</label>
                     <input type="url" id="dubbingImage" placeholder="https://example.com/resim.jpg">
                 </div>
-                
+
                 <div class="form-group">
                     <label>🔗 İndirme Linkleri:</label>
                     <div id="linkContainer">
@@ -570,7 +571,7 @@
                     </div>
                     <button type="button" class="add-link-btn" onclick="addLinkInput()">+ Başka Link Ekle</button>
                     <div id="linkError" class="error-message" style="display: none;"></div>
-                    
+
                     <div class="supported-platforms">
                         <h4>📌 Desteklenen Platformlar:</h4>
                         <div class="platform-list">
@@ -580,13 +581,12 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <button type="submit" class="submit-btn">🚀 Dublajı Yayınla</button>
             </form>
         </div>
     </div>
 
-    <!-- Kullanım Şartları Modal -->
     <div id="termsModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeTermsModal()">&times;</span>
@@ -601,7 +601,7 @@
                     <li style="margin-bottom: 8px;"><span style="color: #ff6666;">⚔️</span> Şiddet teşvik eden içerikler</li>
                     <li style="margin-bottom: 8px;"><span style="color: #ff6666;">©️</span> Telif hakkı ihlali içeren materyaller</li>
                 </ul>
-                
+
                 <h3 style="color: #1e90ff; margin: 25px 0 15px 0;">✅ Genel Kurallar</h3>
                 <ul style="margin-left: 25px; color: #ffffff;">
                     <li style="margin-bottom: 8px;"><span style="color: #00bfff;">🎭</span> Sadece kendi yaptığınız dublajları paylaşın</li>
@@ -610,7 +610,7 @@
                     <li style="margin-bottom: 8px;"><span style="color: #00bfff;">🤝</span> Diğer kullanıcılara saygılı olun</li>
                     <li style="margin-bottom: 8px;"><span style="color: #00bfff;">🔗</span> Sadece desteklenen platformlardan link paylaşın</li>
                 </ul>
-                
+
                 <div style="background: rgba(255, 68, 68, 0.1); padding: 20px; border-radius: 10px; margin-top: 25px; border-left: 4px solid #ff4444;">
                     <h4 style="color: #ff4444; margin-bottom: 10px;">⚖️ Yasal Sorumluluk</h4>
                     <p style="color: #ffffff;">Paylaştığınız içeriklerin yasal sorumluluğu size aittir. Platform, kullanıcı içeriklerinden sorumlu değildir ancak kurallara aykırı içerikleri kaldırma hakkını saklı tutar.</p>
@@ -620,8 +620,27 @@
     </div>
 
     <script>
-        let dubbings = JSON.parse(localStorage.getItem('dubbings')) || [];
+        // Firebase Projenizin Yapılandırma Bilgileri
+        // Bu kısmı kendi Firebase projenizden kopyalayıp buraya yapıştırmalısınız!
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY", // Kendi API anahtarınız
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // Kendi authDomain'iniz
+            projectId: "YOUR_PROJECT_ID", // Kendi proje kimliğiniz
+            storageBucket: "YOUR_PROJECT_ID.appspot.com", // Kendi storageBucket'ınız
+            messagingSenderId: "YOUR_SENDER_ID", // Kendi messagingSenderId'niz
+            appId: "YOUR_APP_ID" // Kendi appId'niz
+        };
+
+        // Firebase'i başlat
+        firebase.initializeApp(firebaseConfig);
+        // Firestore veritabanı referansını al
+        const db = firebase.firestore();
+
+        // Desteklenen platformlar listesi
         const supportedPlatforms = ['gofile.io', 'dosyaupload.com', 'mediafire.com'];
+
+        // Dublaj verilerini depolamak için boş bir dizi. Firebase'den çekilen veriler buraya gelecek.
+        let allDubbings = [];
 
         function openModal() {
             document.getElementById('addModal').style.display = 'block';
@@ -657,45 +676,45 @@
         }
 
         function validateLink(url) {
-            if (!url) return { valid: false, error: 'Link boş olamaz' };
-            
+            if (!url) return { valid: false, error: 'Link boş olamaz.' };
+
             try {
                 const urlObj = new URL(url);
                 const hostname = urlObj.hostname.toLowerCase();
-                
-                const isSupported = supportedPlatforms.some(platform => 
+
+                const isSupported = supportedPlatforms.some(platform =>
                     hostname.includes(platform) || hostname.includes(platform.replace('.', ''))
                 );
-                
+
                 if (!isSupported) {
-                    return { 
-                        valid: false, 
-                        error: `Bu platform desteklenmiyor. Desteklenen platformlar: ${supportedPlatforms.join(', ')}` 
+                    return {
+                        valid: false,
+                        error: `Bu platform desteklenmiyor. Desteklenenler: ${supportedPlatforms.join(', ')}`
                     };
                 }
-                
+
                 return { valid: true };
             } catch (e) {
-                return { valid: false, error: 'Geçersiz URL formatı' };
+                return { valid: false, error: 'Geçersiz URL formatı.' };
             }
         }
 
         function addLinkInput() {
             const container = document.getElementById('linkContainer');
             const linkCount = container.children.length;
-            
+
             if (linkCount >= 2) {
-                showError('En fazla 2 link ekleyebilirsiniz');
+                showError('En fazla 2 link ekleyebilirsiniz.');
                 return;
             }
-            
+
             const newLinkGroup = document.createElement('div');
             newLinkGroup.className = 'link-input-group';
             newLinkGroup.innerHTML = `
                 <input type="url" class="link-input" placeholder="https://gofile.io/d/example" style="flex: 1;">
                 <button type="button" class="remove-link-btn" onclick="removeLinkInput(this)">×</button>
             `;
-            
+
             container.appendChild(newLinkGroup);
             updateRemoveButtons();
         }
@@ -712,7 +731,7 @@
         function updateRemoveButtons() {
             const container = document.getElementById('linkContainer');
             const removeButtons = container.querySelectorAll('.remove-link-btn');
-            
+
             removeButtons.forEach(btn => {
                 btn.style.display = container.children.length > 1 ? 'flex' : 'none';
             });
@@ -739,7 +758,8 @@
             document.getElementById('linkError').style.display = 'none';
         }
 
-        function submitDubbing(event) {
+        // Dublaj gönderme (Firebase'e kaydetme) fonksiyonu
+        async function submitDubbing(event) {
             event.preventDefault();
 
             const title = document.getElementById('dubbingTitle').value;
@@ -747,11 +767,12 @@
             const description = document.getElementById('dubbingDescription').value;
             const uploader = document.getElementById('uploaderName').value;
             const image = document.getElementById('dubbingImage').value;
-            
+
             const linkInputs = document.querySelectorAll('.link-input');
             const downloadLinks = [];
             let hasError = false;
 
+            // Linkleri doğrula ve topla
             linkInputs.forEach(input => {
                 const url = input.value.trim();
                 if (url) {
@@ -771,29 +792,33 @@
             if (hasError) return;
 
             if (downloadLinks.length === 0) {
-                showError('En az bir indirme linki ekleyin');
+                showError('En az bir indirme linki ekleyin.');
                 return;
             }
 
             const newDubbing = {
-                id: Date.now(),
                 title: title,
                 type: type,
                 description: description,
-                uploader: uploader,image: image,
+                uploader: uploader,
+                image: image,
                 downloadLinks: downloadLinks,
-                uploadDate: new Date().toLocaleDateString('tr-TR')
+                // `serverTimestamp()` Firebase tarafından otomatik olarak sunucu saatini ekler
+                uploadDate: new Date().toLocaleDateString('tr-TR'), // Kullanıcı tarafındaki tarih
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() // Sunucu tarafında eklenme zamanı (sıralama için)
             };
 
-            dubbings.push(newDubbing);
-            localStorage.setItem('dubbings', JSON.stringify(dubbings));
-            
-            displayDubbings();
-            updateStats();
-            closeModal();
-            
-            // Başarı mesajı göster
-            alert('Dublaj başarıyla eklendi! 🎉');
+            try {
+                // Firestore'daki 'dubbings' koleksiyonuna yeni belge ekle
+                await db.collection('dubbings').add(newDubbing);
+                alert('Dublaj başarıyla eklendi! 🎉');
+                closeModal();
+                // Yeni verilerle listeyi ve istatistikleri güncelle
+                fetchAndDisplayDubbings();
+            } catch (error) {
+                console.error("Belge eklenirken hata oluştu: ", error);
+                alert('Dublaj eklenirken bir hata oluştu. Lütfen konsolu kontrol edin.');
+            }
         }
 
         function getPlatformName(url) {
@@ -808,49 +833,94 @@
             }
         }
 
-        function displayDubbings(dubbingsToShow = dubbings) {
+        // Dublajları Firebase'den çekme ve gösterme fonksiyonu
+        async function fetchAndDisplayDubbings(searchTerm = '') {
             const dubbingList = document.getElementById('dubbingList');
-            
-            if (dubbingsToShow.length === 0) {
-                dubbingList.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">🎤</div>
-                        <h3>Henüz dublaj eklenmemiş</h3>
-                        <p>İlk dublajı sen ekle!</p>
-                    </div>
-                `;
-                return;
-            }
+            dubbingList.innerHTML = ''; // Mevcut listeyi temizle
 
-            dubbingList.innerHTML = dubbingsToShow.map(dubbing => `
-                <div class="dubbing-item">
-                    <div class="dubbing-header">
-                        <div class="dubbing-title">${dubbing.title}</div>
-                        <div class="dubbing-type">${getTypeText(dubbing.type)}</div>
-                    </div>
-                    
-                    ${dubbing.image ? 
-                        `<img src="${dubbing.image}" alt="${dubbing.title}" class="dubbing-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                         <div class="no-image" style="display: none;">🖼️ Resim yüklenemedi</div>` : 
-                        `<div class="no-image">🖼️ Resim eklenmemiş</div>`
-                    }
-                    
-                    <div class="dubbing-description">${dubbing.description}</div>
-                    
-                    <div class="download-links">
-                        ${dubbing.downloadLinks.map(link => `
-                            <a href="${link.url}" target="_blank" class="download-link">
-                                📥 ${link.platform} - İndir
-                            </a>
-                            <div class="link-info">${link.url}</div>
-                        `).join('')}
-                    </div>
-                    
-                    <div class="uploader-info">
-                        👤 Yükleyen: ${dubbing.uploader} | 📅 ${dubbing.uploadDate}
-                    </div>
+            // Yüklenme durumunu göster
+            dubbingList.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🎤</div>
+                    <h3>Dublajlar yükleniyor...</h3>
+                    <p>Lütfen bekleyin.</p>
                 </div>
-            `).join('');
+            `;
+
+            try {
+                let query = db.collection('dubbings').orderBy('timestamp', 'desc'); // En son eklenenler üste gelecek
+
+                const snapshot = await query.get(); // Koleksiyondaki tüm belgeleri al
+                const fetchedDubbings = [];
+                snapshot.forEach(doc => {
+                    // Her belgeyi id'si ile birlikte al
+                    fetchedDubbings.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Arama terimi varsa, çekilen dublajları filtrele
+                let dubbingsToRender = fetchedDubbings;
+                if (searchTerm.trim()) {
+                    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+                    dubbingsToRender = fetchedDubbings.filter(dubbing =>
+                        dubbing.title.toLowerCase().includes(lowerCaseSearchTerm) ||
+                        dubbing.description.toLowerCase().includes(lowerCaseSearchTerm) ||
+                        dubbing.uploader.toLowerCase().includes(lowerCaseSearchTerm)
+                    );
+                }
+
+                // Global `allDubbings` değişkenini güncelle
+                allDubbings = fetchedDubbings;
+
+                if (dubbingsToRender.length === 0) {
+                    dubbingList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">🎤</div>
+                            <h3>${searchTerm ? 'Aramanızla eşleşen dublaj bulunamadı.' : 'Henüz dublaj eklenmemiş'}</h3>
+                            <p>${searchTerm ? 'Farklı bir arama deneyin veya ilk dublajı siz ekleyin!' : 'İlk dublajı sen ekle!'}</p>
+                        </div>
+                    `;
+                } else {
+                    // Dublajları HTML olarak oluştur ve listeye ekle
+                    dubbingList.innerHTML = dubbingsToRender.map(dubbing => `
+                        <div class="dubbing-item">
+                            <div class="dubbing-header">
+                                <div class="dubbing-title">${dubbing.title}</div>
+                                <div class="dubbing-type">${getTypeText(dubbing.type)}</div>
+                            </div>
+
+                            ${dubbing.image ?
+                                `<img src="${dubbing.image}" alt="${dubbing.title}" class="dubbing-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 <div class="no-image" style="display: none;">🖼️ Resim yüklenemedi</div>` :
+                                `<div class="no-image">🖼️ Resim eklenmemiş</div>`
+                            }
+
+                            <div class="dubbing-description">${dubbing.description}</div>
+
+                            <div class="download-links">
+                                ${dubbing.downloadLinks.map(link => `
+                                    <a href="${link.url}" target="_blank" class="download-link">
+                                        📥 ${link.platform} - İndir
+                                    </a>
+                                    <div class="link-info">${link.url}</div>
+                                `).join('')}
+                            </div>
+
+                            <div class="uploader-info">
+                                👤 Yükleyen: ${dubbing.uploader} | 📅 ${dubbing.uploadDate}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                // İstatistikleri güncellerken tüm çekilen dublajları kullan
+                updateStats(fetchedDubbings);
+            } catch (error) {
+                console.error("Belgeler çekilirken hata oluştu: ", error);
+                dubbingList.innerHTML = `<div class="empty-state" style="color: #ff4444;">
+                                            <div class="icon">❌</div>
+                                            <h3>Dublajlar yüklenirken bir hata oluştu.</h3>
+                                            <p>Lütfen Firebase projenizi ve güvenlik kurallarını kontrol edin.</p>
+                                          </div>`;
+            }
         }
 
         function getTypeText(type) {
@@ -863,36 +933,27 @@
             return types[type] || '📁 Diğer';
         }
 
-        function updateStats() {
-            const totalDubbings = dubbings.length;
-            const gameDubbings = dubbings.filter(d => d.type === 'game').length;
-            const movieDubbings = dubbings.filter(d => d.type === 'movie').length;
+        // İstatistikleri güncelleyen fonksiyon. Argüman olarak dublaj listesi alır.
+        function updateStats(currentDubbings) {
+            const totalDubbings = currentDubbings.length;
+            const gameDubbings = currentDubbings.filter(d => d.type === 'game').length;
+            const movieDubbings = currentDubbings.filter(d => d.type === 'movie').length;
 
             document.getElementById('totalDubbings').textContent = totalDubbings;
             document.getElementById('gameDubbings').textContent = gameDubbings;
             document.getElementById('movieDubbings').textContent = movieDubbings;
         }
 
+        // Arama fonksiyonu (Firebase'den çekilen `allDubbings` üzerinde filtreleme yapar)
         function searchDubbings(searchTerm) {
-            if (!searchTerm.trim()) {
-                displayDubbings();
-                return;
-            }
-
-            const filteredDubbings = dubbings.filter(dubbing => 
-                dubbing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                dubbing.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                dubbing.uploader.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-
-            displayDubbings(filteredDubbings);
+            // Arama yapılınca, fetchAndDisplayDubbings fonksiyonunu çağırarak arama terimini gönderiyoruz.
+            fetchAndDisplayDubbings(searchTerm);
         }
 
-        // Sayfa yüklendiğinde dubllajları göster
+        // Sayfa yüklendiğinde dublajları Firebase'den çek ve göster
         document.addEventListener('DOMContentLoaded', function() {
-            displayDubbings();
-            updateStats();
-            updateRemoveButtons();
+            fetchAndDisplayDubbings();
+            updateRemoveButtons(); // İlk yüklemede tek link girişinin silme butonunu gizle
         });
 
         // ESC tuşu ile modal kapatma
